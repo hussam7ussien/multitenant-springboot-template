@@ -13,5 +13,5 @@ import java.util.Map;
 @Component
 @ConfigurationProperties(prefix = "tenants")
 public class TenantConfigurationProperties {
-    private Map<String, TenantData> datasources;
+    private Map<String, TenantData> tenantsData;
 }

@@ -19,7 +19,7 @@ public class DataSourceConfig {
 
     @Bean
     public DataSource dataSource(){
-        Map<Object,Object> tenantDataSources = tenantConfig.getDatasources().entrySet().stream()
+        Map<Object,Object> tenantDataSources = tenantConfig.getTenantsData().entrySet().stream()
                 .collect(
                         Collectors.toMap(
                                 Map.Entry::getKey,

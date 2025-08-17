@@ -19,11 +19,15 @@ spring:
 
 
 tenants:
-  datasources:
+  tenantsData:
     tenant1:
-      tenant-id: tenant1
-      postgres-connection:
+      postgresConnection:
         url: jdbc:postgresql://localhost:5432/tenant1
         username: postgres
         password: secret
-        driverClassName: org.postgresql.Driver
+
+    tenant2:
+      postgresConnection:
+        url: jdbc:postgresql://localhost:5432/tenant2
+        username: postgres
+        password: secret
