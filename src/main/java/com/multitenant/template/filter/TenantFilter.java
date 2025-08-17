@@ -1,7 +1,7 @@
-package com.mutlitenant.template.filter;
+package com.multitenant.template.filter;
 
-import com.mutlitenant.template.context.TenantContext;
-import com.mutlitenant.template.context.TenantData;
+import com.multitenant.template.tenant.context.TenantContext;
+import com.multitenant.template.tenant.model.TenantData;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

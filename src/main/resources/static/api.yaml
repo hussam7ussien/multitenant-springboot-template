@@ -1,0 +1,38 @@
+openapi: 3.0.1
+info:
+  title: Welcome API
+  description: A simple API that returns a welcome message.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /welcome:
+    get:
+      tags:
+        - Welcome
+      summary: Show welcome message
+      operationId: showWelcomeMessage
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+            example: Hussam
+          required: true
+          description: Name of the person to welcome
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WelcomeResponse'
+
+components:
+  schemas:
+    WelcomeResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Welcome, Hussam!

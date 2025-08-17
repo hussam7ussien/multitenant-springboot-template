@@ -1,4 +1,6 @@
-package com.mutlitenant.template.context;
+package com.multitenant.template.tenant.context;
+
+import com.multitenant.template.tenant.model.TenantData;
 
 public class TenantContext {
     public static final ThreadLocal<TenantData> CURRENT_TENANT = new ThreadLocal<>();
@@ -13,6 +15,10 @@ public class TenantContext {
             throw new IllegalStateException("Tenant context not initialized");
         }
         return tenant;
+    }
+
+    public static TenantData getTenantOrNull() {
+        return CURRENT_TENANT.get();
     }
 
     public static void clear(){

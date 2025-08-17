@@ -1,4 +1,4 @@
-package com.mutlitenant.template.context;
+package com.multitenant.template.tenant.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,4 +14,5 @@ public class TenantData implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     private final String tenantId;
+    private final PostgresConnection postgresConnection;
 }

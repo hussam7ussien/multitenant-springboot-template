@@ -1,0 +1,29 @@
+spring:
+  flyway:
+    enabled: false
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/defaultdb
+    username: postgres
+    password: password
+  jpa:
+    properties:
+      hibernate:
+        ddl-auto: none
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/defaultdb
+
+
+tenants:
+  datasources:
+    tenant1:
+      tenant-id: tenant1
+      postgres-connection:
+        url: jdbc:postgresql://localhost:5432/tenant1
+        username: postgres
+        password: secret
+        driverClassName: org.postgresql.Driver
