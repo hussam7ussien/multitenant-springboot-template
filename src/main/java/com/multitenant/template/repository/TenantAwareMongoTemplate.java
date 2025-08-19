@@ -1,9 +1,11 @@
 package com.multitenant.template.repository;
 
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Component
 public class TenantAwareMongoTemplate {
     private final MongoTemplate mongoTemplate;
 

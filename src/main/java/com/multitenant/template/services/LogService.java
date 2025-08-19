@@ -4,7 +4,6 @@ import com.multitenant.template.entity.mongo.LogEntry;
 import com.multitenant.template.repository.TenantAwareMongoTemplate;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.List;
 
 @Service
