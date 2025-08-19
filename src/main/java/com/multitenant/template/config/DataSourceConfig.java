@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -18,25 +19,38 @@ public class DataSourceConfig {
 
     @Bean
     public DataSource dataSource(){
-        Map<Object,Object> tenantPostgresConnections = tenantConfig.getTenantsData().entrySet().stream()
+        //First step build tenant data sources
+        Map<String,DataSource> tenantPostgresConnections = buildTenantDataSource();
+        if(tenantPostgresConnections.isEmpty()){
+            throw new IllegalStateException("No tenants configured");
+        }
+
+        //convert Map<String, DataSource> to Map<Object, Object>
+        Map<Object, Object> targetDataSources = new HashMap<>(tenantPostgresConnections);
+        PostgresRoutingDataSource routingDataSource = new PostgresRoutingDataSource();
+
+        //Set target data sources
+        routingDataSource.setTargetDataSources(targetDataSources);
+
+        //set first tenant as default data source
+        DataSource defaultDataSource = tenantPostgresConnections.values().iterator().next();
+        routingDataSource.setDefaultTargetDataSource(defaultDataSource);
+
+        //validate and finalize setup
+        routingDataSource.afterPropertiesSet();
+
+        return routingDataSource;
+    }
+
+    private Map<String, DataSource> buildTenantDataSource(){
+        return  tenantConfig.getTenantsData().entrySet().stream()
                 .collect(
                         Collectors.toMap(
                                 Map.Entry::getKey,
                                 entry -> buildPostgresDataSource(entry.getValue().getPostgresConnection())
                         )
                 );
-
-        PostgresRoutingDataSource routingDataSource = new PostgresRoutingDataSource();
-        routingDataSource.setTargetDataSources(tenantPostgresConnections);
-        routingDataSource.setDefaultTargetDataSource(
-                tenantPostgresConnections.values().stream()
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalStateException("No tenants configured"))
-        );
-        routingDataSource.afterPropertiesSet();
-        return routingDataSource;
     }
-
     private DataSource buildPostgresDataSource(PostgresConnection pg){
         return DataSourceBuilder.create()
                 .url(pg.getUrl())

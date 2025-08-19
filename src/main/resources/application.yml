@@ -1,11 +1,6 @@
 spring:
   flyway:
     enabled: false
-  datasource:
-    driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/defaultdb
-    username: postgres
-    password: password
   jpa:
     properties:
       hibernate:
@@ -24,10 +19,10 @@ tenants:
       postgresConnection:
         url: jdbc:postgresql://localhost:5432/tenant1
         username: postgres
-        password: secret
+        password: password
 
     tenant2:
       postgresConnection:
         url: jdbc:postgresql://localhost:5432/tenant2
         username: postgres
-        password: secret
+        password: password
