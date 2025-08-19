@@ -33,4 +33,4 @@ build/
 .vscode/
 
 # Ignore root application.yaml but keep src/main/resources/application.yaml
-/application.yaml
+/application.yml
