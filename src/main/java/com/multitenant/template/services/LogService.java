@@ -1,7 +1,7 @@
 package com.multitenant.template.services;
 
 import com.multitenant.template.entity.mongo.LogEntry;
-import com.multitenant.template.repository.TenantAwareMongoTemplate;
+import com.multitenant.template.repository.mongo.TenantAwareMongoTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.multitenant.template.repository;
+package com.multitenant.template.repository.mongo;
 
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Component;

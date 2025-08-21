@@ -10,7 +10,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/defaultdb
+      uri: mongodb://admin:admin@localhost:27017/template?authSource=admin
 
 
 tenants:
@@ -26,3 +26,9 @@ tenants:
         url: jdbc:postgresql://localhost:5432/tenant2
         username: postgres
         password: password
+
+logging:
+  level:
+    com:
+      multitenant:
+        template=DEBUG:

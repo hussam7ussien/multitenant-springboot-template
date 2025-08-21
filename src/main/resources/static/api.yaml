@@ -27,6 +27,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WelcomeResponse'
+  /customers/register:
+    post:
+      tags:
+        - Customers
+      summary: Register a new customer for a tenant
+      operationId: registerCustomer
+      parameters:
+        - in: header
+          name: X-Tenant-ID
+          schema:
+            type: string
+            example: tenant1
+          required: true
+          description: The tenant identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterCustomerRequest'
+      responses:
+        '200':
+          description: Successfully created customer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerResponse'
 
 components:
   schemas:
@@ -36,3 +63,23 @@ components:
         message:
           type: string
           example: Welcome, Hussam!
+
+    RegisterCustomerRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: Hussam
+
+    CustomerResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: Hussam
