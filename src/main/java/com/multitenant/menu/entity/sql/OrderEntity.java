@@ -19,7 +19,7 @@ public class OrderEntity {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    private UserEntity user;
+    private UserEntity customer;
 
     @ManyToOne
     @JoinColumn(name = "branch_id")
@@ -31,13 +31,25 @@ public class OrderEntity {
     @Column(nullable = false)
     private String orderMode; // eat-in, delivery, takeaway
 
+    private String orderCode;
     private String deliveryAddress;
+    
+    private BigDecimal subtotal;
+    private BigDecimal vat;
     private BigDecimal total;
-    private String couponCode;
+    private BigDecimal discount;
+    private BigDecimal specialDiscount;
+    private BigDecimal coversFee;
+    
+    private String paymentMethod;
+    private String promoCode;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItemEntity> items;
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+    
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }

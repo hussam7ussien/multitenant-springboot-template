@@ -4,32 +4,18 @@ server:
 spring:
   flyway:
     enabled: true
-    locations: classpath:db/migration
+
   jpa:
+    hibernate:
+      ddl-auto: none   # Do NOT create/validate/update schema
     properties:
-      hibernate:
-        ddl-auto: validate
-        dialect: org.hibernate.dialect.MySQLDialect
+      hibernate.hbm2ddl.auto: none   # Disables Hibernate checks
+      javax.persistence.validation.mode: none  # Skip JPA validation
     show-sql: true
 
   data:
     mongodb:
-      uri: mongodb://admin:admin@localhost:27017/template?authSource=admin
-
-# Springdoc OpenAPI (Swagger) Configuration
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-    enabled: true
-  swagger-ui:
-    path: /
-    enabled: true
-    operations-sorter: method
-    tags-sorter: alpha
-    try-it-out-enabled: true
-  show-actuator: false
-  default-consumes-media-type: application/json
-  default-produces-media-type: application/json
+      uri: mongodb://admin:admin@localhost:27017/menu?authSource=admin
 
 # JWT Configuration
 jwt:
@@ -48,19 +34,18 @@ tenants:
       databaseConnection:
         url: jdbc:mysql://localhost:3306/tenant1?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
         username: root
-        password: password
+        password: phpdev@Ks1
         driverClassName: com.mysql.cj.jdbc.Driver
 
     tenant2:
       databaseConnection:
         url: jdbc:mysql://localhost:3306/tenant2?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
         username: root
-        password: password
+        password: phpdev@Ks1
         driverClassName: com.mysql.cj.jdbc.Driver
 
 logging:
   level:
     com:
       multitenant:
-        template: DEBUG
-
+        menu: DEBUG
