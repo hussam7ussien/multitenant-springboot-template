@@ -20,4 +20,14 @@ public class BranchEntity {
     private String city;
     private String area;
     private String phone;
+
+    // Order mode flags - which order modes are enabled for this branch
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT true")
+    private Boolean eatInEnabled = true;
+
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT true")
+    private Boolean deliveryEnabled = true;
+
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT true")
+    private Boolean takeawayEnabled = true;
 }

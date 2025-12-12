@@ -34,6 +34,9 @@ public class OrderEntity {
     private String orderCode;
     private String deliveryAddress;
     
+    // QR Code URL for eat-in orders (null for delivery/takeaway)
+    private String qrCodeUrl;
+    
     private BigDecimal subtotal;
     private BigDecimal vat;
     private BigDecimal total;

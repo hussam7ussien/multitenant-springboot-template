@@ -11,6 +11,7 @@ import com.multitenant.menu.repository.sql.UserRepository;
 import com.multitenant.menu.repository.sql.OrderRepository;
 import com.multitenant.menu.repository.sql.ProductRepository;
 import com.multitenant.menu.tenant.context.TenantContext;
+import com.multitenant.menu.util.QrCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,6 +34,7 @@ public class OrderSignupService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final PasswordEncoder passwordEncoder;
+    private final QrCodeGenerator qrCodeGenerator;
     
     /**
      * Sign up a new user and create their order in one transaction
@@ -64,6 +66,16 @@ public class OrderSignupService {
         response.setMessage("User registered and order created successfully");
         response.setOrderId(order.getId());
         response.setOrderCode(order.getOrderCode());
+        response.setOrderMode(order.getOrderMode());
+        
+        // Generate QR code for eat-in orders only
+        if ("eat-in".equalsIgnoreCase(order.getOrderMode())) {
+            String qrCodeUrl = qrCodeGenerator.generateQrCodeAsBase64(order.getOrderCode());
+            response.setQrCodeUrl(qrCodeUrl);
+            order.setQrCodeUrl(qrCodeUrl);
+            orderRepository.save(order); // Update order with QR code URL
+            log.info("QR code generated for eat-in order: {}", order.getOrderCode());
+        }
         
         // Map user data to response
         SignupWithOrderResponse.UserDTO userDTO = new SignupWithOrderResponse.UserDTO();

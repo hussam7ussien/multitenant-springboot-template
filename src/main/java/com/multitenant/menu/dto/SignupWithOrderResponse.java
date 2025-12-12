@@ -16,6 +16,8 @@ public class SignupWithOrderResponse {
     private UserDTO user;
     private Long orderId;
     private String orderCode;
+    private String orderMode;  // eat-in, delivery, takeaway
+    private String qrCodeUrl;  // QR code for eat-in orders, null for delivery/takeaway
     
     @Data
     @NoArgsConstructor
