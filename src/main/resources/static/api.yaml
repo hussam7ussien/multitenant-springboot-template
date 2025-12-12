@@ -1,85 +1,978 @@
 openapi: 3.0.1
 info:
-  title: Welcome API
-  description: A simple API that returns a welcome message.
+  title: Multi-Tenant API
+  description: REST API for multi-tenant application with JWT authentication
   version: 1.0.0
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:8080/api/v1
+    description: Local development server
+  - url: https://api.example.com/api/v1
+    description: Production server
+
+security:
+  - bearerAuth: []
+
 paths:
-  /welcome:
-    get:
-      tags:
-        - Welcome
-      summary: Show welcome message
-      operationId: showWelcomeMessage
-      parameters:
-        - in: query
-          name: name
-          schema:
-            type: string
-            example: Hussam
-          required: true
-          description: Name of the person to welcome
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WelcomeResponse'
-  /customers/register:
+  /auth/login:
     post:
       tags:
-        - Customers
-      summary: Register a new customer for a tenant
-      operationId: registerCustomer
-      parameters:
-        - in: header
-          name: X-Tenant-ID
-          schema:
-            type: string
-            example: tenant1
-          required: true
-          description: The tenant identifier
+        - Authentication
+      summary: Login and get JWT token
+      operationId: login
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RegisterCustomerRequest'
+              $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: Successfully created customer
+          description: Successful login
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerResponse'
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /categories:
+    get:
+      tags:
+        - Categories
+      summary: Get all categories
+      operationId: getCategories
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+
+  /categories/{id}/products:
+    get:
+      tags:
+        - Categories
+      summary: Get products by category
+      operationId: getCategoryProducts
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: branch_id
+          in: query
+          schema:
+            type: integer
+        - name: order_mode
+          in: query
+          schema:
+            type: string
+            default: eat-in
+      responses:
+        '200':
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
+  /products/{id}:
+    get:
+      tags:
+        - Products
+      summary: Get product details
+      operationId: getProductDetails
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+
+  /branches:
+    get:
+      tags:
+        - Branches
+      summary: Get all branches
+      operationId: getBranches
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      responses:
+        '200':
+          description: List of branches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Branch'
+
+  /branches/cities:
+    get:
+      tags:
+        - Branches
+      summary: Get cities and areas
+      operationId: getCitiesAndAreas
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      responses:
+        '200':
+          description: Cities and areas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CitiesAndAreasResponse'
+
+  /orders:
+    post:
+      tags:
+        - Orders
+      summary: Create a new order
+      operationId: createOrder
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '200':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+    get:
+      tags:
+        - Orders
+      summary: Get order by ID
+      operationId: getOrder
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+        - name: order_id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+
+  /orders/{id}/cancel:
+    post:
+      tags:
+        - Orders
+      summary: Cancel an order
+      operationId: cancelOrder
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Order cancelled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+
+  /orders/payment-completed:
+    post:
+      tags:
+        - Orders
+      summary: Mark order payment as completed
+      operationId: paymentCompleted
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCompletedRequest'
+      responses:
+        '200':
+          description: Payment completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+
+  /offers:
+    get:
+      tags:
+        - Offers
+      summary: Get all offers
+      operationId: getOffers
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      responses:
+        '200':
+          description: List of offers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Offer'
+
+  /offers/{id}/products:
+    get:
+      tags:
+        - Offers
+      summary: Get products in an offer
+      operationId: getOfferProducts
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
+  /users/signup:
+    post:
+      tags:
+        - Users
+      summary: Register a new user
+      operationId: signup
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '200':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  /users/signin:
+    post:
+      tags:
+        - Users
+      summary: Sign in user
+      operationId: signin
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SigninRequest'
+      responses:
+        '200':
+          description: Sign in successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  /users/verify:
+    post:
+      tags:
+        - Users
+      summary: Verify user account
+      operationId: verify
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequest'
+      responses:
+        '200':
+          description: Verification successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  /users/update-information:
+    put:
+      tags:
+        - Users
+      summary: Update user information
+      operationId: updateUserInformation
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  /users/upload:
+    post:
+      tags:
+        - Users
+      summary: Upload user files
+      operationId: uploadFiles
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadRequest'
+      responses:
+        '200':
+          description: Files uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+
+  /users/update-otp:
+    put:
+      tags:
+        - Users
+      summary: Update OTP
+      operationId: updateOtp
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOtpRequest'
+      responses:
+        '200':
+          description: OTP updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  /reservations:
+    post:
+      tags:
+        - Reservations
+      summary: Create a reservation
+      operationId: createReservation
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReservationRequest'
+      responses:
+        '200':
+          description: Reservation created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationResponse'
+
+  /reservations/payment-completed:
+    post:
+      tags:
+        - Reservations
+      summary: Mark reservation payment as completed
+      operationId: reservationPaymentCompleted
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCompletedRequest'
+      responses:
+        '200':
+          description: Payment completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+
+  /coupons/get:
+    post:
+      tags:
+        - Coupons
+      summary: Get coupon by code
+      operationId: getCoupon
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetCouponRequest'
+      responses:
+        '200':
+          description: Coupon details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CouponResponse'
+
+  /coupons/welcome:
+    get:
+      tags:
+        - Coupons
+      summary: Get welcome coupon
+      operationId: getWelcomeCoupon
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      responses:
+        '200':
+          description: Welcome coupon
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CouponResponse'
+
+  /organizations/by-slug:
+    get:
+      tags:
+        - Organizations
+      summary: Get organization by slug
+      operationId: getOrganizationBySlug
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+        - name: slug
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Organization details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationResponse'
+
+  /payment/session:
+    get:
+      tags:
+        - Payment
+      summary: Create payment session
+      operationId: createPaymentSession
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+        - name: order_id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Payment session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentSessionResponse'
 
 components:
-  schemas:
-    WelcomeResponse:
-      type: object
-      properties:
-        message:
-          type: string
-          example: Welcome, Hussam!
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 
-    RegisterCustomerRequest:
+  parameters:
+    XTenantID:
+      name: X-Tenant-ID
+      in: header
+      required: true
+      schema:
+        type: string
+        example: tenant1
+      description: The tenant identifier
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    LoginRequest:
       type: object
       required:
-        - name
+        - username
+        - password
       properties:
-        name:
+        username:
           type: string
-          example: Hussam
+          example: mobileapp
+        password:
+          type: string
+          example: password123
 
-    CustomerResponse:
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type:
+          type: string
+          example: Bearer
+
+    Category:
       type: object
       properties:
         id:
           type: integer
-          format: int64
-          example: 1
         name:
           type: string
-          example: Hussam
+        description:
+          type: string
+        image:
+          type: string
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          format: double
+        image:
+          type: string
+        category_id:
+          type: integer
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductOption'
+        variations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductVariation'
+
+    ProductOption:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        mandatory:
+          type: boolean
+        displayOrder:
+          type: integer
+        choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/OptionChoice'
+
+    OptionChoice:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        priceModifier:
+          type: number
+          format: double
+        displayOrder:
+          type: integer
+
+    ProductVariation:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        price:
+          type: number
+          format: double
+
+    Branch:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        area:
+          type: string
+        phone:
+          type: string
+
+    CitiesAndAreasResponse:
+      type: object
+      properties:
+        cities:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              areas:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+
+    CreateOrderRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        branch_id:
+          type: integer
+        order_mode:
+          type: string
+          enum: [eat-in, delivery, takeaway]
+        delivery_address:
+          type: string
+        coupon_code:
+          type: string
+
+    OrderItem:
+      type: object
+      required:
+        - product_id
+        - quantity
+      properties:
+        product_id:
+          type: integer
+        quantity:
+          type: integer
+        variations:
+          type: array
+          items:
+            type: object
+
+    OrderResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        total:
+          type: number
+          format: double
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        created_at:
+          type: string
+          format: date-time
+
+    PaymentCompletedRequest:
+      type: object
+      required:
+        - order_id
+      properties:
+        order_id:
+          type: integer
+        payment_method:
+          type: string
+        transaction_id:
+          type: string
+
+    PaymentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        order_id:
+          type: integer
+
+    Offer:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        image:
+          type: string
+        valid_from:
+          type: string
+          format: date-time
+        valid_to:
+          type: string
+          format: date-time
+
+    SignupRequest:
+      type: object
+      required:
+        - username
+        - password
+        - email
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        name:
+          type: string
+
+    SigninRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        phone:
+          type: string
+        verified:
+          type: boolean
+
+    VerifyRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+        user_id:
+          type: integer
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+
+    UploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+
+    UploadResponse:
+      type: object
+      properties:
+        url:
+          type: string
+        filename:
+          type: string
+
+    UpdateOtpRequest:
+      type: object
+      required:
+        - otp
+      properties:
+        otp:
+          type: string
+        user_id:
+          type: integer
+
+    CreateReservationRequest:
+      type: object
+      required:
+        - branch_id
+        - date
+        - time
+      properties:
+        branch_id:
+          type: integer
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        covers:
+          type: integer
+        table_id:
+          type: integer
+        special_requests:
+          type: string
+
+    ReservationResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        branch_id:
+          type: integer
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    GetCouponRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+        branch_id:
+          type: integer
+        order_mode:
+          type: string
+
+    CouponResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        discount:
+          type: number
+          format: double
+        discount_type:
+          type: string
+          enum: [percentage, fixed]
+        valid:
+          type: boolean
+
+    OrganizationResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        logo:
+          type: string
+
+    PaymentSessionResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+        client_secret:
+          type: string
+        order_id:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+

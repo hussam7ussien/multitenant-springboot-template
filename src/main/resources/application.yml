@@ -1,34 +1,66 @@
+server:
+  port: 8000
+
 spring:
   flyway:
-    enabled: false
+    enabled: true
+    locations: classpath:db/migration
   jpa:
     properties:
       hibernate:
-        ddl-auto: none
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        ddl-auto: validate
+        dialect: org.hibernate.dialect.MySQLDialect
     show-sql: true
 
   data:
     mongodb:
       uri: mongodb://admin:admin@localhost:27017/template?authSource=admin
 
+# Springdoc OpenAPI (Swagger) Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+    try-it-out-enabled: true
+  show-actuator: false
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+
+# JWT Configuration
+jwt:
+  secret: your-256-bit-secret-key-change-this-in-production-environment-make-it-long-enough
+  expiration: 86400000 # 24 hours in milliseconds
+
+# CORS Configuration
+cors:
+  allowed-origins:
+    - http://localhost:4200
+    - http://localhost:3000
 
 tenants:
   tenantsData:
     tenant1:
-      postgresConnection:
-        url: jdbc:postgresql://localhost:5432/tenant1
-        username: postgres
+      databaseConnection:
+        url: jdbc:mysql://localhost:3306/tenant1?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+        username: root
         password: password
+        driverClassName: com.mysql.cj.jdbc.Driver
 
     tenant2:
-      postgresConnection:
-        url: jdbc:postgresql://localhost:5432/tenant2
-        username: postgres
+      databaseConnection:
+        url: jdbc:mysql://localhost:3306/tenant2?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+        username: root
         password: password
+        driverClassName: com.mysql.cj.jdbc.Driver
 
 logging:
   level:
     com:
       multitenant:
-        template=DEBUG:
+        template: DEBUG
+
