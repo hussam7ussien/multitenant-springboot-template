@@ -524,6 +524,101 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaymentSessionResponse'
 
+  /tenant-settings:
+    get:
+      tags:
+        - Tenant Settings
+      summary: Get all tenant settings
+      operationId: getAllTenantSettings
+      description: Retrieve all tenant configuration settings as key-value pairs
+      responses:
+        '200':
+          description: Tenant settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                example:
+                  currency: "EGP"
+                  language: "en"
+                  timezone: "Africa/Cairo"
+
+  /tenant-settings/{key}:
+    get:
+      tags:
+        - Tenant Settings
+      summary: Get a specific tenant setting
+      operationId: getTenantSetting
+      description: Retrieve a specific tenant setting by key
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The setting key
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Setting value retrieved successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Setting not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Tenant Settings
+      summary: Update a tenant setting
+      operationId: updateTenantSetting
+      description: Update or create a specific tenant setting
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The setting key
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantSettingUpdateRequest'
+      responses:
+        '200':
+          description: Setting updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantSettingsDTO'
+
+    delete:
+      tags:
+        - Tenant Settings
+      summary: Delete a tenant setting
+      operationId: deleteTenantSetting
+      description: Delete a specific tenant setting
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The setting key
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Setting deleted successfully
+        '404':
+          description: Setting not found
+
 components:
   securitySchemes:
     bearerAuth:
@@ -976,3 +1071,35 @@ components:
           type: string
           format: date-time
 
+    TenantSettingsDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+        key:
+          type: string
+        value:
+          type: string
+        data_type:
+          type: string
+          enum: [string, number, boolean, json]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    TenantSettingUpdateRequest:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          type: string
+          description: The setting value
+        dataType:
+          type: string
+          enum: [string, number, boolean, json]
+          default: string
+          description: The data type of the setting value

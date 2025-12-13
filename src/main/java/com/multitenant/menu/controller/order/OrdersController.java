@@ -170,9 +170,8 @@ public class OrdersController extends AbstractController implements OrdersApi {
     
     /**
      * Sign up a new user and create an order in one request
-     * POST /api/v1/orders/signup
+     * Defined in OpenAPI: POST /api/v1/orders/signup
      */
-    @PostMapping("/orders/signup")
     public ResponseEntity<SignupWithOrderResponse> signupAndCreateOrder(
             @RequestHeader("X-Tenant-ID") String xTenantID,
             @RequestBody SignupWithOrderRequest request) {
@@ -183,13 +182,12 @@ public class OrdersController extends AbstractController implements OrdersApi {
 
     /**
      * Get order details by order ID (query parameter) or order code
-     * GET /api/v1/orders?order_id={orderId or orderCode}
+     * Defined in OpenAPI: GET /api/v1/orders?order_id={orderId or orderCode}
      * 
      * Accepts both:
      * - Numeric database IDs: /api/v1/orders?order_id=1
      * - Order codes: /api/v1/orders?order_id=ORD-1765635963124-5829
      */
-    @GetMapping("/orders")
     public ResponseEntity<OrderDetailsResponse> getOrderByIdQuery(
             @RequestParam(value = "order_id", required = false) String orderIdOrCode) {
         logInfo("Fetching order by ID/code query: " + orderIdOrCode);
@@ -233,6 +231,7 @@ public class OrdersController extends AbstractController implements OrdersApi {
 
     /**
      * Get order details by order code (public endpoint for restaurant staff scanning QR)
+     * This is a custom endpoint not part of the OpenAPI interface
      * GET /api/v1/orders/code/{orderCode}
      */
     @GetMapping("/orders/code/{orderCode}")
