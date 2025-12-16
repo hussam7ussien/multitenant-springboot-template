@@ -4,6 +4,7 @@ server:
 spring:
   flyway:
     enabled: true
+    repair-on-migrate: true
 
   jpa:
     hibernate:
