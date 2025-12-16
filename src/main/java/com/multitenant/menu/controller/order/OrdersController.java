@@ -1,8 +1,8 @@
 package com.multitenant.menu.controller.order;
 
 import com.multitenant.menu.api.OrdersApi;
-import com.multitenant.menu.dto.SignupWithOrderRequest;
-import com.multitenant.menu.dto.SignupWithOrderResponse;
+import com.multitenant.menu.model.SignupWithOrderRequest;
+import com.multitenant.menu.model.SignupWithOrderResponse;
 import com.multitenant.menu.dto.OrderDetailsResponse;
 import com.multitenant.menu.model.CreateOrderRequest;
 import com.multitenant.menu.model.OrderResponse;
@@ -157,9 +157,63 @@ public class OrdersController extends AbstractController implements OrdersApi {
     }
 
     @Override
-    public ResponseEntity<OrderResponse> getOrder(String xTenantID, Integer orderId) {
-        logInfo("Fetching order ID: " + orderId);
-        return ResponseEntity.ok(new OrderResponse());
+    public ResponseEntity<OrderResponse> getOrder(String xTenantID, String orderId) {
+        logInfo("Fetching order by ID/code: " + orderId);
+        
+        if (orderId == null || orderId.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        
+        Optional<OrderEntity> order = Optional.empty();
+        
+        // First, try to parse as Long (database ID) if it's purely numeric
+        if (orderId.matches("\\d+")) {
+            try {
+                Long id = Long.parseLong(orderId);
+                order = orderRepository.findById(id);
+            } catch (NumberFormatException e) {
+                // Ignore
+            }
+        }
+        
+        // If not found by ID, try as order code
+        if (order.isEmpty()) {
+            order = orderRepository.findByOrderCode(orderId);
+        }
+        
+        if (order.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        
+        OrderEntity orderEntity = order.get();
+        OrderResponse response = new OrderResponse();
+        response.setId(Math.toIntExact(orderEntity.getId()));
+        response.setStatus(orderEntity.getStatus());
+        response.setTotal(orderEntity.getTotal().doubleValue());
+        
+        // Convert LocalDateTime to OffsetDateTime
+        if (orderEntity.getCreatedAt() != null) {
+            response.setCreatedAt(orderEntity.getCreatedAt().atOffset(java.time.ZoneOffset.UTC));
+        }
+        
+        // Map items
+        if (orderEntity.getItems() != null) {
+            List<com.multitenant.menu.model.OrderItem> responseItems = new ArrayList<>();
+            for (var itemEntity : orderEntity.getItems()) {
+                if (itemEntity.getProduct() == null) {
+                    continue;
+                }
+                com.multitenant.menu.model.OrderItem item = new com.multitenant.menu.model.OrderItem();
+                item.setProductId(Math.toIntExact(itemEntity.getProduct().getId()));
+                item.setQuantity(itemEntity.getQuantity());
+                // Handle variations if needed (assuming string for now, but model expects List<Object>)
+                // item.setVariations(...) 
+                responseItems.add(item);
+            }
+            response.setItems(responseItems);
+        }
+        
+        return ResponseEntity.ok(response);
     }
 
     @Override
@@ -172,66 +226,19 @@ public class OrdersController extends AbstractController implements OrdersApi {
      * Sign up a new user and create an order in one request
      * Defined in OpenAPI: POST /api/v1/orders/signup
      */
+    @Override
     public ResponseEntity<SignupWithOrderResponse> signupAndCreateOrder(
-            @RequestHeader("X-Tenant-ID") String xTenantID,
-            @RequestBody SignupWithOrderRequest request) {
+            String xTenantID,
+            SignupWithOrderRequest request) {
         logInfo("Processing signup with order for tenant: " + xTenantID);
         SignupWithOrderResponse response = orderSignupService.signupAndCreateOrder(request);
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get order details by order ID (query parameter) or order code
-     * Defined in OpenAPI: GET /api/v1/orders?order_id={orderId or orderCode}
-     * 
-     * Accepts both:
-     * - Numeric database IDs: /api/v1/orders?order_id=1
-     * - Order codes: /api/v1/orders?order_id=ORD-1765635963124-5829
-     */
-    public ResponseEntity<OrderDetailsResponse> getOrderByIdQuery(
-            @RequestParam(value = "order_id", required = false) String orderIdOrCode) {
-        logInfo("Fetching order by ID/code query: " + orderIdOrCode);
-        
-        if (orderIdOrCode == null || orderIdOrCode.trim().isEmpty()) {
-            logInfo("order_id parameter is required");
-            return ResponseEntity.badRequest().build();
-        }
-        
-        try {
-            // First, try to parse as Long (database ID) if it's purely numeric
-            if (orderIdOrCode.matches("\\d+")) {
-                try {
-                    Long id = Long.parseLong(orderIdOrCode);
-                    var order = orderRepository.findById(id);
-                    
-                    if (order.isPresent()) {
-                        logInfo("Order found by database ID: " + id);
-                        return ResponseEntity.ok(buildOrderDetailsResponse(order.get()));
-                    }
-                } catch (NumberFormatException e) {
-                    logInfo("Could not parse as Long, will try as order code: " + orderIdOrCode);
-                }
-            }
-            
-            // Try as order code (alphanumeric format like ORD-1765635963124-5829)
-            var orderByCode = orderRepository.findByOrderCode(orderIdOrCode);
-            if (orderByCode.isPresent()) {
-                logInfo("Order found by code: " + orderIdOrCode);
-                return ResponseEntity.ok(buildOrderDetailsResponse(orderByCode.get()));
-            }
-            
-            logInfo("Order not found with ID or code: " + orderIdOrCode);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new OrderDetailsResponse()); // Return empty response with 404 status
-        } catch (Exception e) {
-            logError("Error fetching order: " + e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+
 
     /**
      * Get order details by order code (public endpoint for restaurant staff scanning QR)
-     * This is a custom endpoint not part of the OpenAPI interface
      * GET /api/v1/orders/code/{orderCode}
      */
     @GetMapping("/orders/code/{orderCode}")

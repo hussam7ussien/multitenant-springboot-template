@@ -1,7 +1,9 @@
 package com.multitenant.menu.services;
 
-import com.multitenant.menu.dto.SignupWithOrderRequest;
-import com.multitenant.menu.dto.SignupWithOrderResponse;
+import com.multitenant.menu.model.SignupWithOrderRequest;
+import com.multitenant.menu.model.SignupWithOrderResponse;
+import com.multitenant.menu.model.SignupOrderItem;
+import com.multitenant.menu.model.UserDTO;
 import com.multitenant.menu.entity.sql.UserEntity;
 import com.multitenant.menu.entity.sql.OrderEntity;
 import com.multitenant.menu.entity.sql.OrderItemEntity;
@@ -78,7 +80,7 @@ public class OrderSignupService {
         }
         
         // Map user data to response
-        SignupWithOrderResponse.UserDTO userDTO = new SignupWithOrderResponse.UserDTO();
+        UserDTO userDTO = new UserDTO();
         userDTO.setId(newUser.getId());
         userDTO.setUsername(newUser.getUsername());
         userDTO.setEmail(newUser.getEmail());
@@ -129,11 +131,11 @@ public class OrderSignupService {
         order.setOrderMode(request.getOrderMode());
         
         // Set financial details
-        order.setSubtotal(request.getSubtotal() != null ? request.getSubtotal() : BigDecimal.ZERO);
-        order.setVat(request.getVat() != null ? request.getVat() : BigDecimal.ZERO);
-        order.setTotal(request.getTotal() != null ? request.getTotal() : BigDecimal.ZERO);
-        order.setDiscount(request.getDiscount() != null ? request.getDiscount() : BigDecimal.ZERO);
-        order.setCoversFee(request.getCoversFee() != null ? request.getCoversFee() : BigDecimal.ZERO);
+        order.setSubtotal(request.getSubtotal() != null ? BigDecimal.valueOf(request.getSubtotal()) : BigDecimal.ZERO);
+        order.setVat(request.getVat() != null ? BigDecimal.valueOf(request.getVat()) : BigDecimal.ZERO);
+        order.setTotal(request.getTotal() != null ? BigDecimal.valueOf(request.getTotal()) : BigDecimal.ZERO);
+        order.setDiscount(request.getDiscount() != null ? BigDecimal.valueOf(request.getDiscount()) : BigDecimal.ZERO);
+        order.setCoversFee(request.getCoversFee() != null ? BigDecimal.valueOf(request.getCoversFee()) : BigDecimal.ZERO);
         
         order.setStatus("pending");
         order.setCreatedAt(LocalDateTime.now());
@@ -151,10 +153,21 @@ public class OrderSignupService {
         // Create order items
         if (request.getItems() != null && !request.getItems().isEmpty()) {
             List<OrderItemEntity> items = new ArrayList<>();
-            for (SignupWithOrderRequest.OrderItemDTO itemDTO : request.getItems()) {
+            for (SignupOrderItem itemDTO : request.getItems()) {
                 OrderItemEntity item = new OrderItemEntity();
                 item.setOrder(order);
                 item.setQuantity(itemDTO.getQuantity() != null ? itemDTO.getQuantity() : 1);
+                
+                // Set Product
+                if (itemDTO.getProductId() != null) {
+                    ProductEntity product = productRepository.findById(itemDTO.getProductId())
+                        .orElse(null);
+                    if (product != null) {
+                        item.setProduct(product);
+                    } else {
+                        log.warn("Product not found with ID: {} for tenant: {}", itemDTO.getProductId(), TenantContext.getTenant().getTenantId());
+                    }
+                }
                 
                 // Store variations and options as JSON string
                 StringBuilder variationsJson = new StringBuilder();

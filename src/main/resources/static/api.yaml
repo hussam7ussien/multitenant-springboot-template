@@ -165,7 +165,7 @@ paths:
     get:
       tags:
         - Orders
-      summary: Get order by ID
+      summary: Get order by ID or code
       operationId: getOrder
       parameters:
         - $ref: '#/components/parameters/XTenantID'
@@ -173,7 +173,8 @@ paths:
           in: query
           required: true
           schema:
-            type: integer
+            type: string
+          description: Order ID (numeric) or Order Code (alphanumeric)
       responses:
         '200':
           description: Order details
@@ -181,6 +182,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrderResponse'
+
+  /orders/signup:
+    post:
+      tags:
+        - Orders
+      summary: Sign up and create order
+      operationId: signupAndCreateOrder
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupWithOrderRequest'
+      responses:
+        '200':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignupWithOrderResponse'
 
   /orders/{id}/cancel:
     post:
@@ -1103,3 +1126,125 @@ components:
           enum: [string, number, boolean, json]
           default: string
           description: The data type of the setting value
+
+    SignupWithOrderRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        birthday:
+          type: string
+        gender:
+          type: string
+        orderMode:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SignupOrderItem'
+        subtotal:
+          type: number
+          format: double
+        vat:
+          type: number
+          format: double
+        total:
+          type: number
+          format: double
+        discount:
+          type: number
+          format: double
+        specialDiscount:
+          type: number
+          format: double
+        coversFee:
+          type: number
+          format: double
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethodDTO'
+        note:
+          type: string
+        promoCode:
+          type: string
+        deviceToken:
+          type: string
+
+    SignupOrderItem:
+      type: object
+      properties:
+        productId:
+          type: integer
+          format: int64
+        quantity:
+          type: integer
+        price:
+          type: number
+          format: double
+        extrasPrice:
+          type: number
+          format: double
+        title:
+          type: string
+        note:
+          type: string
+        options:
+          type: object
+          additionalProperties: true
+        variations:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    PaymentMethodDTO:
+      type: object
+      properties:
+        slug:
+          type: string
+        title:
+          type: string
+        icon:
+          type: string
+
+    SignupWithOrderResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+        message:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserDTO'
+        orderId:
+          type: integer
+          format: int64
+        orderCode:
+          type: string
+        orderMode:
+          type: string
+        qrCodeUrl:
+          type: string
+
+    UserDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        email:
+          type: string
+        displayName:
+          type: string
+        phone:
+          type: string
+        gender:
+          type: string
+        birthday:
+          type: string
+
