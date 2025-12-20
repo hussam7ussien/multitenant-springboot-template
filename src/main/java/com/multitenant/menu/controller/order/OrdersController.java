@@ -31,6 +31,18 @@ public class OrdersController extends AbstractController implements OrdersApi {
     // ... existing endpoints ...
 
     /**
+     * Sign up and create order
+     * POST /api/v1/orders/signup
+     */
+    @Override
+    public ResponseEntity<SignupWithOrderResponse> signupAndCreateOrder(
+            String xTenantID,
+            SignupWithOrderRequest signupWithOrderRequest
+    ) {
+        return ResponseEntity.ok(orderSignupService.signupAndCreateOrder(signupWithOrderRequest));
+    }
+
+    /**
      * Get paginated past orders (grouped by date) for current user
      * GET /api/v1/orders/history
      */
