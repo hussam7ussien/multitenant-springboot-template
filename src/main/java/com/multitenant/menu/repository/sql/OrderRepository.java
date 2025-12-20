@@ -9,5 +9,7 @@ import java.util.Optional;
 @Repository
 public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
     Optional<OrderEntity> findByOrderCode(String orderCode);
+
+    org.springframework.data.domain.Page<OrderEntity> findByCustomerIdOrderByCreatedAtDesc(Long customerId, org.springframework.data.domain.Pageable pageable);
 }
 

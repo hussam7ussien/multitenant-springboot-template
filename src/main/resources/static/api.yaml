@@ -248,6 +248,51 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaymentResponse'
 
+  /orders/history:
+    get:
+      tags:
+        - Orders
+      summary: Get past orders (grouped by date) for current user
+      operationId: getPastOrdersHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          required: false
+          description: Page number (zero-based)
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+          required: false
+          description: Page size
+      responses:
+        '200':
+          description: Paginated grouped orders by date
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrderHistoryGroup'
+                  pageable:
+                    type: object
+                  totalPages:
+                    type: integer
+                  totalElements:
+                    type: integer
+
   /offers:
     get:
       tags:
@@ -1247,4 +1292,17 @@ components:
           type: string
         birthday:
           type: string
+
+    OrderHistoryGroup:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          description: The date for this group of orders
+        orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderResponse'
+          description: List of orders for this date
 
