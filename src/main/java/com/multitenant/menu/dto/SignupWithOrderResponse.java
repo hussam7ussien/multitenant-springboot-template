@@ -18,6 +18,8 @@ public class SignupWithOrderResponse {
     private String orderCode;
     private String orderMode;  // eat-in, delivery, takeaway
     private String qrCodeUrl;  // QR code for eat-in orders, null for delivery/takeaway
+    private String accessToken;  // JWT access token
+    private String refreshToken; // JWT refresh token
     
     @Data
     @NoArgsConstructor

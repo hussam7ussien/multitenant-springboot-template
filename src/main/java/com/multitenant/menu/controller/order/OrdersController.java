@@ -7,6 +7,7 @@ import com.multitenant.menu.services.OrderSignupService;
 import com.multitenant.menu.repository.sql.OrderRepository;
 import com.multitenant.menu.repository.sql.ProductRepository;
 import com.multitenant.menu.dto.OrderHistoryGroupDTO;
+import com.multitenant.menu.dto.SignupWithOrderResponse;
 import com.multitenant.menu.services.OrderHistoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -35,11 +36,37 @@ public class OrdersController extends AbstractController implements OrdersApi {
      * POST /api/v1/orders/signup
      */
     @Override
-    public ResponseEntity<SignupWithOrderResponse> signupAndCreateOrder(
+    public ResponseEntity<com.multitenant.menu.model.SignupWithOrderResponse> signupAndCreateOrder(
             String xTenantID,
             SignupWithOrderRequest signupWithOrderRequest
     ) {
-        return ResponseEntity.ok(orderSignupService.signupAndCreateOrder(signupWithOrderRequest));
+        SignupWithOrderResponse dtoResponse = orderSignupService.signupAndCreateOrder(signupWithOrderRequest);
+        
+        // Convert DTO to Model
+        com.multitenant.menu.model.SignupWithOrderResponse modelResponse = new com.multitenant.menu.model.SignupWithOrderResponse();
+        modelResponse.setStatus(Integer.valueOf(dtoResponse.getStatus()));
+        modelResponse.setMessage(dtoResponse.getMessage());
+        modelResponse.setOrderId(dtoResponse.getOrderId());
+        modelResponse.setOrderCode(dtoResponse.getOrderCode());
+        modelResponse.setOrderMode(dtoResponse.getOrderMode());
+        modelResponse.setQrCodeUrl(dtoResponse.getQrCodeUrl());
+        modelResponse.setAccessToken(dtoResponse.getAccessToken());
+        modelResponse.setRefreshToken(dtoResponse.getRefreshToken());
+        
+        // Convert UserDTO
+        if (dtoResponse.getUser() != null) {
+            com.multitenant.menu.model.UserDTO userDTO = new com.multitenant.menu.model.UserDTO();
+            userDTO.setId(dtoResponse.getUser().getId());
+            userDTO.setUsername(dtoResponse.getUser().getUsername());
+            userDTO.setEmail(dtoResponse.getUser().getEmail());
+            userDTO.setDisplayName(dtoResponse.getUser().getDisplayName());
+            userDTO.setPhone(dtoResponse.getUser().getPhone());
+            userDTO.setGender(dtoResponse.getUser().getGender());
+            userDTO.setBirthday(dtoResponse.getUser().getBirthday());
+            modelResponse.setUser(userDTO);
+        }
+        
+        return ResponseEntity.ok(modelResponse);
     }
 
     /**

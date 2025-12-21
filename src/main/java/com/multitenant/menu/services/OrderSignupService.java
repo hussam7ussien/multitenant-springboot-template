@@ -1,9 +1,9 @@
 package com.multitenant.menu.services;
 
 import com.multitenant.menu.model.SignupWithOrderRequest;
-import com.multitenant.menu.model.SignupWithOrderResponse;
 import com.multitenant.menu.model.SignupOrderItem;
-import com.multitenant.menu.model.UserDTO;
+import com.multitenant.menu.dto.SignupWithOrderResponse;
+import com.multitenant.menu.dto.SignupWithOrderResponse.UserDTO;
 import com.multitenant.menu.entity.sql.UserEntity;
 import com.multitenant.menu.entity.sql.OrderEntity;
 import com.multitenant.menu.entity.sql.OrderItemEntity;
@@ -24,7 +24,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 
 @Service
@@ -37,6 +36,7 @@ public class OrderSignupService {
     private final ProductRepository productRepository;
     private final PasswordEncoder passwordEncoder;
     private final QrCodeGenerator qrCodeGenerator;
+    private final JwtService jwtService;
     
     /**
      * Sign up a new user and create their order in one transaction
@@ -62,13 +62,29 @@ public class OrderSignupService {
         orderRepository.save(order);
         log.info("Order created: {} for user: {}", order.getId(), newUser.getId());
         
-        // 3. Build response
+        // 3. Generate JWT tokens for the new user
+        String accessToken = jwtService.generateAccessToken(
+            newUser.getId(), 
+            newUser.getUsername(), 
+            newUser.getPhone(), 
+            tenantId
+        );
+        String refreshToken = jwtService.generateRefreshToken(
+            newUser.getId(), 
+            newUser.getUsername(), 
+            tenantId
+        );
+        log.info("JWT tokens generated for user: {}", newUser.getId());
+        
+        // 4. Build response
         SignupWithOrderResponse response = new SignupWithOrderResponse();
         response.setStatus(200);
         response.setMessage("User registered and order created successfully");
         response.setOrderId(order.getId());
         response.setOrderCode(order.getOrderCode());
         response.setOrderMode(order.getOrderMode());
+        response.setAccessToken(accessToken);
+        response.setRefreshToken(refreshToken);
         
         // Generate QR code for eat-in orders only
         if ("eat-in".equalsIgnoreCase(order.getOrderMode())) {

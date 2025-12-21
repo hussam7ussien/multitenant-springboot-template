@@ -1356,6 +1356,12 @@ components:
           type: string
         qrCodeUrl:
           type: string
+        accessToken:
+          type: string
+          description: JWT access token
+        refreshToken:
+          type: string
+          description: JWT refresh token
 
     UserDTO:
       type: object
