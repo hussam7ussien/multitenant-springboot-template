@@ -64,12 +64,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         try {
-            final String jwt = authHeader.substring(7);
-            final String username = jwtService.extractUsername(jwt);
+            // Extract JWT token, handling potential double "Bearer " prefix
+            String jwt = authHeader.substring(7).trim(); // Remove "Bearer "
+            // If token still starts with "Bearer", remove it (handles "Bearer Bearer..." case)
+            if (jwt.toLowerCase().startsWith("bearer")) {
+                jwt = jwt.substring(6).trim(); // Remove "Bearer" (case-insensitive)
+                log.warn("Detected double 'Bearer' prefix in Authorization header, cleaned token");
+            }
+            final String finalJwt = jwt;
+            final String username = jwtService.extractUsername(finalJwt);
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 // Extract tenant_id from token
-                String tokenTenantId = jwtService.extractTenantId(jwt);
+                String tokenTenantId = jwtService.extractTenantId(finalJwt);
                 String requestTenantId = request.getHeader("X-Tenant-ID");
                 
                 // Validate tenant_id matches (prevent cross-tenant access)
@@ -80,9 +87,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
                 
                 // Validate token
-                if (jwtService.validateToken(jwt, username)) {
+                if (jwtService.validateToken(finalJwt, username)) {
                     // Extract user_id from token (preferred method)
-                    Long userId = jwtService.extractUserId(jwt);
+                    Long userId = jwtService.extractUserId(finalJwt);
                     UserEntity user = null;
                     
                     if (userId != null) {
@@ -104,10 +111,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         );
                         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(authToken);
-                        log.debug("User authenticated: {} (ID: {}, tenant: {})", username, userId, tokenTenantId);
+                        log.info("User authenticated: {} (ID: {}, tenant: {})", username, userId, tokenTenantId);
                     } else {
                         log.warn("User not found - username: {}, userId from token: {}", username, userId);
+                        // Don't set authentication if user not found, but continue filter chain
+                        // The controller will handle the 401 response
                     }
+                } else {
+                    log.warn("JWT token validation failed for username: {}", username);
                 }
             }
         } catch (Exception e) {

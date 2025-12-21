@@ -17,8 +17,20 @@ public class OrderHistoryGroupDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class OrderSummaryDTO {
+        private Long id;
         private String orderCode;
         private String status;
+        private Double total;
+        private java.time.LocalDateTime createdAt;
+        private List<OrderItemSummaryDTO> items;
+        
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class OrderItemSummaryDTO {
+            private Long productId;
+            private Integer quantity;
+        }
     }
 }
 

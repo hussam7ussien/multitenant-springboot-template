@@ -33,9 +33,27 @@ public class OrderHistoryService {
         List<OrderHistoryGroupDTO> groups = grouped.entrySet().stream()
                 .map(entry -> new OrderHistoryGroupDTO(
                         entry.getKey(),
-                        entry.getValue().stream().map(order ->
-                                new OrderHistoryGroupDTO.OrderSummaryDTO(order.getOrderCode(), order.getStatus())
-                        ).collect(Collectors.toList())
+                        entry.getValue().stream().map(order -> {
+                            // Map order items
+                            List<OrderHistoryGroupDTO.OrderSummaryDTO.OrderItemSummaryDTO> items = 
+                                order.getItems() != null ? order.getItems().stream()
+                                    .map(item -> new OrderHistoryGroupDTO.OrderSummaryDTO.OrderItemSummaryDTO(
+                                        item.getProduct() != null ? item.getProduct().getId() : null,
+                                        item.getQuantity()
+                                    ))
+                                    .collect(Collectors.toList())
+                                : Collections.emptyList();
+                            
+                            // Create order summary with all fields
+                            return new OrderHistoryGroupDTO.OrderSummaryDTO(
+                                order.getId(),
+                                order.getOrderCode(),
+                                order.getStatus(),
+                                order.getTotal() != null ? order.getTotal().doubleValue() : null,
+                                order.getCreatedAt(),
+                                items
+                            );
+                        }).collect(Collectors.toList())
                 )).collect(Collectors.toList());
         
         // Custom pagination of groups list if grouping reduced total
