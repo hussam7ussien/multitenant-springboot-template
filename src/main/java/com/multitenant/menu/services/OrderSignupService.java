@@ -174,16 +174,19 @@ public class OrderSignupService {
                 item.setOrder(order);
                 item.setQuantity(itemDTO.getQuantity() != null ? itemDTO.getQuantity() : 1);
                 
-                // Set Product
-                if (itemDTO.getProductId() != null) {
-                    ProductEntity product = productRepository.findById(itemDTO.getProductId())
-                        .orElse(null);
-                    if (product != null) {
-                        item.setProduct(product);
-                    } else {
-                        log.warn("Product not found with ID: {} for tenant: {}", itemDTO.getProductId(), TenantContext.getTenant().getTenantId());
-                    }
+                // Set Product - REQUIRED for order items
+                if (itemDTO.getProductId() == null) {
+                    log.error("Order item missing productId for tenant: {}", TenantContext.getTenant().getTenantId());
+                    throw new IllegalArgumentException("Order item must have a productId");
                 }
+                
+                ProductEntity product = productRepository.findById(itemDTO.getProductId())
+                    .orElseThrow(() -> {
+                        log.error("Product not found with ID: {} for tenant: {}", itemDTO.getProductId(), TenantContext.getTenant().getTenantId());
+                        return new IllegalArgumentException("Product not found with ID: " + itemDTO.getProductId());
+                    });
+                
+                item.setProduct(product);
                 
                 // Store variations and options as JSON string
                 StringBuilder variationsJson = new StringBuilder();

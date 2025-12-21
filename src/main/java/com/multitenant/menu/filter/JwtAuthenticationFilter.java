@@ -3,6 +3,7 @@ package com.multitenant.menu.filter;
 import com.multitenant.menu.entity.sql.UserEntity;
 import com.multitenant.menu.services.JwtService;
 import com.multitenant.menu.services.UserService;
+import com.multitenant.menu.tenant.context.TenantContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -86,20 +87,66 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
                 
+                // Check if token is expired first
+                if (jwtService.isTokenExpired(finalJwt)) {
+                    log.warn("JWT token expired for username: {}", username);
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token expired");
+                    return;
+                }
+                
                 // Validate token
                 if (jwtService.validateToken(finalJwt, username)) {
                     // Extract user_id from token (preferred method)
                     Long userId = jwtService.extractUserId(finalJwt);
                     UserEntity user = null;
                     
-                    if (userId != null) {
-                        // Find user by ID (most reliable)
-                        user = userService.findById(userId).orElse(null);
-                    }
-                    
-                    // Fallback to username lookup if user_id not available
-                    if (user == null) {
-                        user = userService.findByUsername(username).orElse(null);
+                    // Verify TenantContext is set (required for database routing)
+                    try {
+                        String currentTenantId = TenantContext.getTenant() != null 
+                            ? TenantContext.getTenant().getTenantId() 
+                            : null;
+                        
+                        if (currentTenantId == null) {
+                            log.error("TenantContext not set when looking up user. Token tenant: {}, Request tenant: {}", 
+                                    tokenTenantId, requestTenantId);
+                            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Tenant context not initialized");
+                            return;
+                        }
+                        
+                        if (!currentTenantId.equals(tokenTenantId)) {
+                            log.error("TenantContext mismatch: context tenant={}, token tenant={}, request tenant={}", 
+                                    currentTenantId, tokenTenantId, requestTenantId);
+                            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Tenant context mismatch");
+                            return;
+                        }
+                        
+                        log.debug("Looking up user - userId: {}, username: {}, tenant: {}", userId, username, currentTenantId);
+                        
+                        if (userId != null) {
+                            // Find user by ID (most reliable)
+                            user = userService.findById(userId).orElse(null);
+                            if (user == null) {
+                                log.warn("User not found by ID: {} in tenant: {}", userId, currentTenantId);
+                            } else {
+                                log.debug("User found by ID: {} - username: {}", userId, user.getUsername());
+                            }
+                        }
+                        
+                        // Fallback to username lookup if user_id not available or user not found by ID
+                        if (user == null) {
+                            log.debug("Attempting username lookup: {} in tenant: {}", username, currentTenantId);
+                            user = userService.findByUsername(username).orElse(null);
+                            if (user == null) {
+                                log.warn("User not found by username: {} in tenant: {}", username, currentTenantId);
+                            } else {
+                                log.debug("User found by username: {} - ID: {}", username, user.getId());
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.error("Error looking up user - userId: {}, username: {}, tenant: {}", 
+                                userId, username, tokenTenantId, e);
+                        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error authenticating user");
+                        return;
                     }
                     
                     if (user != null) {
@@ -113,12 +160,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         SecurityContextHolder.getContext().setAuthentication(authToken);
                         log.info("User authenticated: {} (ID: {}, tenant: {})", username, userId, tokenTenantId);
                     } else {
-                        log.warn("User not found - username: {}, userId from token: {}", username, userId);
-                        // Don't set authentication if user not found, but continue filter chain
-                        // The controller will handle the 401 response
+                        log.error("User not found - username: {}, userId from token: {}, tenant: {}. " +
+                                "This may indicate the user was deleted or the token is from a different tenant database.", 
+                                username, userId, tokenTenantId);
+                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "User not found");
+                        return;
                     }
                 } else {
                     log.warn("JWT token validation failed for username: {}", username);
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
+                    return;
                 }
             }
         } catch (Exception e) {

@@ -29,7 +29,7 @@ spring:
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET:your-256-bit-secret-key-change-this-in-production-environment-make-it-long-enough}
-  expiration: 1800000  # 30 minutes in milliseconds
+  expiration: 86400000  # 24 hours in milliseconds
   refresh-expiration: 604800000  # 7 days in milliseconds
   temp-session-expiration: 600000  # 10 minutes in milliseconds
 

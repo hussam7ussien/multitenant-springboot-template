@@ -5,19 +5,25 @@ import com.multitenant.menu.tenant.model.TenantData;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
+import com.multitenant.menu.config.TenantConfigurationProperties;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Set;
 
 @Slf4j
+@Component
+@RequiredArgsConstructor
 public class TenantFilter extends OncePerRequestFilter {
-    private final Set<String> validTenants;
+    
+    private final TenantConfigurationProperties tenantConfig;
 
-    public TenantFilter(Set<String> validTenants) {
-        this.validTenants = validTenants;
+    private Set<String> getValidTenants() {
+        return tenantConfig.getTenantsData().keySet();
     }
 
     @Override
@@ -44,7 +50,7 @@ public class TenantFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (!validTenants.contains(tenantId)) {
+        if (!getValidTenants().contains(tenantId)) {
             log.error("Invalid tenantId received: {}", tenantId);
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid tenant: " + tenantId);
             return;
