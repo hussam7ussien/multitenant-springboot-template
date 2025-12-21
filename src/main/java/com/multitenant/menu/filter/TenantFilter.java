@@ -72,6 +72,6 @@ public class TenantFilter extends OncePerRequestFilter {
                path.startsWith("/actuator") ||
                path.equals("/favicon.ico") ||
                path.equals("/error") ||
-               path.startsWith("/api/v1/auth/"); // Authentication endpoints don't need tenant
+               path.equals("/api/v1/auth/login"); // Only skip login, OTP endpoints need tenant
     }
 }

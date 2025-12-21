@@ -1,6 +1,8 @@
 package com.multitenant.menu.filter;
 
+import com.multitenant.menu.entity.sql.UserEntity;
 import com.multitenant.menu.services.JwtService;
+import com.multitenant.menu.services.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +26,7 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final UserService userService;
 
     @Override
     protected void doFilterInternal(
@@ -41,6 +44,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             path.startsWith("/api/v1/orders/signup") ||
             path.startsWith("/api/v1/users/signup") ||
             path.startsWith("/api/v1/users/signin") ||
+            path.startsWith("/api/v1/auth/otp/") ||
+            path.startsWith("/api/v1/auth/refresh") ||
             path.startsWith("/swagger-ui") ||
             path.startsWith("/v3/api-docs") ||
             path.startsWith("/swagger-resources") ||
@@ -63,14 +68,46 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             final String username = jwtService.extractUsername(jwt);
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                // Extract tenant_id from token
+                String tokenTenantId = jwtService.extractTenantId(jwt);
+                String requestTenantId = request.getHeader("X-Tenant-ID");
+                
+                // Validate tenant_id matches (prevent cross-tenant access)
+                if (tokenTenantId != null && requestTenantId != null && !tokenTenantId.equals(requestTenantId)) {
+                    log.warn("Tenant mismatch: token tenant={}, request tenant={}", tokenTenantId, requestTenantId);
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Tenant mismatch");
+                    return;
+                }
+                
+                // Validate token
                 if (jwtService.validateToken(jwt, username)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            username,
-                            null,
-                            Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
-                    );
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    // Extract user_id from token (preferred method)
+                    Long userId = jwtService.extractUserId(jwt);
+                    UserEntity user = null;
+                    
+                    if (userId != null) {
+                        // Find user by ID (most reliable)
+                        user = userService.findById(userId).orElse(null);
+                    }
+                    
+                    // Fallback to username lookup if user_id not available
+                    if (user == null) {
+                        user = userService.findByUsername(username).orElse(null);
+                    }
+                    
+                    if (user != null) {
+                        // Set user as principal
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                user,
+                                null,
+                                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+                        );
+                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                        log.debug("User authenticated: {} (ID: {}, tenant: {})", username, userId, tokenTenantId);
+                    } else {
+                        log.warn("User not found - username: {}, userId from token: {}", username, userId);
+                    }
                 }
             }
         } catch (Exception e) {

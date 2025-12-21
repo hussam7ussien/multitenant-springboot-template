@@ -31,8 +31,35 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
+    public Optional<UserEntity> findByPhone(String phone) {
+        return userRepository.findByPhone(phone);
+    }
+
+    public Optional<UserEntity> findById(Long id) {
+        return userRepository.findById(id);
+    }
+
     public UserEntity updateUser(UserEntity user) {
         return userRepository.save(user);
+    }
+
+    /**
+     * Find existing user by phone or create new user
+     */
+    public UserEntity findOrCreateByPhone(String phone, String tenantId) {
+        return userRepository.findByPhone(phone)
+                .orElseGet(() -> {
+                    // Create new user with phone number
+                    UserEntity newUser = new UserEntity();
+                    newUser.setPhone(phone);
+                    // Generate username from phone
+                    newUser.setUsername("user_" + phone.replaceAll("[^0-9]", "") + "_" + System.currentTimeMillis());
+                    // Set a default password (phone-based auth doesn't use password, but field is required)
+                    newUser.setPassword(passwordEncoder.encode("PHONE_AUTH_" + phone + System.currentTimeMillis()));
+                    newUser.setVerified(false);
+                    newUser.setCreatedAt(java.time.LocalDateTime.now());
+                    return userRepository.save(newUser);
+                });
     }
 
     public boolean verifyOtp(Long userId, String otp) {

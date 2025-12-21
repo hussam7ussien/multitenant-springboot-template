@@ -36,6 +36,83 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /auth/otp/request:
+    post:
+      tags:
+        - Authentication
+      summary: Request OTP for phone number
+      operationId: requestOtp
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpRequest'
+      responses:
+        '200':
+          description: OTP generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpRequestResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/otp/verify:
+    post:
+      tags:
+        - Authentication
+      summary: Verify OTP and get access token
+      operationId: verifyOtp
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpVerifyRequest'
+      responses:
+        '200':
+          description: OTP verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpVerifyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token using refresh token
+      operationId: refreshToken
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/XTenantID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /categories:
     get:
       tags:
@@ -711,6 +788,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
 
   schemas:
     LoginRequest:
@@ -1305,4 +1388,70 @@ components:
           items:
             $ref: '#/components/schemas/OrderResponse'
           description: List of orders for this date
+
+    OtpRequest:
+      type: object
+      required:
+        - phone
+      properties:
+        phone:
+          type: string
+          description: Phone number in international format
+          example: "+1234567890"
+
+    OtpRequestResponse:
+      type: object
+      properties:
+        sessionToken:
+          type: string
+          description: Temporary JWT session token (10 min expiration) for OTP verification
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    OtpVerifyRequest:
+      type: object
+      required:
+        - sessionToken
+        - otp
+      properties:
+        sessionToken:
+          type: string
+          description: Temporary session token from OTP request
+        otp:
+          type: string
+          description: 6-digit OTP code
+          example: "123456"
+
+    OtpVerifyResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token (30 min expiration)
+        refreshToken:
+          type: string
+          description: JWT refresh token (7 days expiration)
+        tokenType:
+          type: string
+          default: "Bearer"
+        user:
+          $ref: '#/components/schemas/UserResponse'
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          description: Refresh token to obtain new access token
+
+    RefreshTokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: New JWT access token (30 min expiration)
+        tokenType:
+          type: string
+          default: "Bearer"
 

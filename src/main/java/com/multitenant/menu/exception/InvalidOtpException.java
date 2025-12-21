@@ -1,0 +1,8 @@
+package com.multitenant.menu.exception;
+
+public class InvalidOtpException extends RuntimeException {
+    public InvalidOtpException(String message) {
+        super(message);
+    }
+}
+

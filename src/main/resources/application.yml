@@ -17,11 +17,30 @@ spring:
   data:
     mongodb:
       uri: mongodb://admin:admin@localhost:27017/menu?authSource=admin
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:123456}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
 
 # JWT Configuration
 jwt:
-  secret: your-256-bit-secret-key-change-this-in-production-environment-make-it-long-enough
-  expiration: 86400000 # 24 hours in milliseconds
+  secret: ${JWT_SECRET:your-256-bit-secret-key-change-this-in-production-environment-make-it-long-enough}
+  expiration: 1800000  # 30 minutes in milliseconds
+  refresh-expiration: 604800000  # 7 days in milliseconds
+  temp-session-expiration: 600000  # 10 minutes in milliseconds
+
+# OTP Configuration
+otp:
+  length: 6
+  expiration-seconds: 600  # 10 minutes
+  log-file-path: logs/otp
+  redis-key-prefix: "otp"  # Keys will be: {tenantId}:otp:{phone}
 
 # CORS Configuration
 cors:
