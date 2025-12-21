@@ -9,7 +9,6 @@ import com.multitenant.menu.entity.sql.ProductEntity;
 import com.multitenant.menu.mapper.CategoryMapper;
 import com.multitenant.menu.mapper.ProductMapper;
 import com.multitenant.menu.services.CategoryService;
-import com.multitenant.menu.services.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,7 +21,6 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class CustomerController extends AbstractController implements CategoriesApi {
-    private final CustomerService customerService;
     private final CategoryService categoryService;
     private final CategoryMapper categoryMapper;
     private final ProductMapper productMapper;

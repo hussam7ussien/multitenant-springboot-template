@@ -15,8 +15,6 @@ spring:
     show-sql: true
 
   data:
-    mongodb:
-      uri: mongodb://admin:admin@localhost:27017/menu?authSource=admin
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
